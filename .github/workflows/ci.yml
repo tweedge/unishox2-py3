@@ -50,7 +50,7 @@ jobs:
           flawfinder unishox2_module.c
 
   codespell:
-    name: Check for spelling errors
+    name: codespell
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
