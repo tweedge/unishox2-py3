@@ -68,29 +68,28 @@ if not args.string:
 
 pprint(args.string)
 
-for i in range(0,10):
-    print("Compresses to ...")
-    compressed, original_size = unishox2.compress(args.string)
-    pprint(compressed)
+print("Compresses to ...")
+compressed, original_size = unishox2.compress(args.string)
+pprint(compressed)
 
-    print("Decompresses to ...")
-    decompressed = unishox2.decompress(compressed, original_size)
-    pprint(decompressed)
+print("Decompresses to ...")
+decompressed = unishox2.decompress(compressed, original_size)
+pprint(decompressed)
 
-    if args.string == decompressed:
-        print("Test succeeded!")
-        # As `compressed` is already raw bytes, we can also call len() on this ...
-        compressed_size = len(compressed)
-        ratio = 1 - compressed_size / original_size
-        if ratio > 0:
-            print(f"Stored this string with {round(ratio * 100, 2)}% less space")
-        else:
-            print(f"Stored this string with {round((1 - ratio) * 100, 2)}% more space :(")
+if args.string == decompressed:
+    print("Test succeeded!")
+    # As `compressed` is already raw bytes, we can also call len() on this ...
+    compressed_size = len(compressed)
+    ratio = 1 - compressed_size / original_size
+    if ratio > 0:
+        print(f"Stored this string with {round(ratio * 100, 2)}% less space")
     else:
-        # heck
-        print(
-            "Test failed. Some sequences cannot round trip, this may be expected: "
-            "https://github.com/siara-cc/Unishox/issues/6 - "
-            "However, if the sequence that failed to round trip is not expected, "
-            "please leave an issue: https://github.com/tweedge/unishox2-py3/issues"
-        )
+        print(f"Stored this string with {round((1 - ratio) * 100, 2)}% more space :(")
+else:
+    # heck
+    print(
+        "Test failed. Some sequences cannot round trip, this may be expected: "
+        "https://github.com/siara-cc/Unishox/issues/6 - "
+        "However, if the sequence that failed to round trip is not expected, "
+        "please leave an issue: https://github.com/tweedge/unishox2-py3/issues"
+    )

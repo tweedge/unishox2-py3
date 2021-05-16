@@ -52,7 +52,7 @@ static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
     char *output_buffer = (char *) malloc(original_data_size + 1);
     int decompressed_size = unishox2_decompress_simple(compressed_data, compressed_data_size, output_buffer);
 
-    PyObject *py_string_object = Py_BuildValue("s", output_buffer, decompressed_size);
+    PyObject *py_string_object = Py_BuildValue("s#", output_buffer, decompressed_size);
     free(output_buffer);
     return py_string_object;
 }
