@@ -29,8 +29,7 @@ setup(
             "unishox2",
             [
                 path.join(here, "unishox2_module.c"),
-                path.join(here, "unishox2", "unishox2.c"),
-                path.join(here, "unishox", "unishox2.h")
+                path.join(here, "unishox", "unishox2.c")
             ],
         )
     ],
