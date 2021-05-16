@@ -9,10 +9,10 @@ def test_ok():
     """
     Simple test case.
     """
-    raw = "The quick brown fox jumps over the lazy dog."
-    compressed, original_size = unishox2.compress(raw)
+    string = "The quick brown fox jumps over the lazy dog."
+    compressed, original_size = unishox2.compress(string)
     decompressed = unishox2.decompress(compressed, original_size)
-    assert decompressed == raw
+    assert decompressed == string
 
 
 @pytest.mark.parametrize(
@@ -23,45 +23,43 @@ def test_decompress_with_arbitrarily_large_malloc(alloc):
     """
     Simple test case.
     """
-    raw = "The quick brown fox jumps over the lazy dog."
-    compressed, original_size = unishox2.compress(raw)
+    string = "The quick brown fox jumps over the lazy dog."
+    compressed, original_size = unishox2.compress(string)
     decompressed = unishox2.decompress(compressed, alloc)
-    assert decompressed == raw
+    assert decompressed == string
 
 
 def test_compress_non_str():
     """
     Verify only strings are accepted by compress.
     """
-    raw = "The quick brown fox jumps over the lazy dog."
+    string = "The quick brown fox jumps over the lazy dog."
     with pytest.raises(TypeError):
-        unishox2.compress([raw])
+        unishox2.compress([string])
     with pytest.raises(TypeError):
-        unishox2.compress((raw,))
+        unishox2.compress((string,))
     with pytest.raises(TypeError):
-        unishox2.compress({"raw": raw})
+        unishox2.compress({"string": string})
     with pytest.raises(TypeError):
         unishox2.compress(1)
     with pytest.raises(TypeError):
         unishox2.compress(1.5)
-    with pytest.raises(TypeError):
-        unishox2.compress(raw.encode("utf-8"))
 
 
 def test_decompress_non_bytes():
     """
     Verify only bytes are accepted to decompress.
     """
-    raw = "The quick brown fox jumps over the lazy dog."
+    string = "The quick brown fox jumps over the lazy dog."
     size = 1
     with pytest.raises(TypeError):
-        unishox2.decompress(raw, size)
+        unishox2.decompress(string, size)
     with pytest.raises(TypeError):
-        unishox2.decompress([raw], size)
+        unishox2.decompress([string], size)
     with pytest.raises(TypeError):
-        unishox2.decompress((raw,), size)
+        unishox2.decompress((string,), size)
     with pytest.raises(TypeError):
-        unishox2.decompress({"raw": raw}, size)
+        unishox2.decompress({"string": string}, size)
     with pytest.raises(TypeError):
         unishox2.decompress(1, size)
     with pytest.raises(TypeError):
@@ -74,11 +72,11 @@ def test_decompress_non_int():
 
     A NEGATIVE INTEGER WILL CAUSE A FAILURE!
     """
-    raw = "The quick brown fox jumps over the lazy dog."
+    string = "The quick brown fox jumps over the lazy dog."
     byte = b"\x87\xa7=\xe3\xe5y\x95=\xa5^/y\xfd\xbfi&\x8c\xb0\x1fy\x95\x7f\x11w\x8a{&\xd7\xbc\xf5\x93\xdaI\x97"
     size = 1
     with pytest.raises(TypeError):
-        unishox2.decompress(byte, raw)
+        unishox2.decompress(byte, string)
     with pytest.raises(TypeError):
         unishox2.decompress(byte, [size])
     with pytest.raises(TypeError):
@@ -90,7 +88,7 @@ def test_decompress_non_int():
 
 
 @pytest.mark.parametrize(
-    "raw",
+    "string",
     [
         "Hello",
         "Hello World",
@@ -105,10 +103,10 @@ def test_decompress_non_int():
         "HELLO WORLD 1234 hello world12",
         "HELLO 234 WORLD",
         "9 HELLO, WORLD",
-        #"H1e2l3l4o5 w6O7R8L9D",
+        "H1e2l3l4o5 w6O7R8L9D",
         "8+80=88",
         "~!@#$%^&*()_+=-`;'\\|\":,./?><",
-        "if (!test_ushx_cd(\"H1e2l3l4o5 w6O7R8L9D\",",
+        'if (!test_ushx_cd("H1e2l3l4o5 w6O7R8L9D",',
         "Hello\tWorld\tHow\tare\tyou?",
         "Hello~World~How~are~you?",
         "Hello\rWorld\rHow\rare\ryou?",
@@ -193,10 +191,10 @@ def test_decompress_non_int():
         "自助者天助 - Those who help themselves, God will help.",
         "早起的鸟儿有虫吃 - Early bird gets the worm.",
         "This is first line,\r\nThis is second line",
-        "{\"menu\": {\n  \"id\": \"file\",\n  \"value\": \"File\",\n  \"popup\": {\n    \"menuitem\": [\n      {\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"},\n      {\"value\": \"Open\", \"onclick\": \"OpenDoc()\"},\n      {\"value\": \"Close\", \"onclick\": \"CloseDoc()\"}\n    ]\n  }\n}}",
-        "{\"menu\": {\r\n  \"id\": \"file\",\r\n  \"value\": \"File\",\r\n  \"popup\": {\r\n    \"menuitem\": [\r\n      {\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"},\r\n      {\"value\": \"Open\", \"onclick\": \"OpenDoc()\"},\r\n      {\"value\":\"Close\", \"onclick\": \"CloseDoc()\"}\r\n    ]\r\n  }\r\n}}",
+        '{"menu": {\n  "id": "file",\n  "value": "File",\n  "popup": {\n    "menuitem": [\n      {"value": "New", "onclick": "CreateNewDoc()"},\n      {"value": "Open", "onclick": "OpenDoc()"},\n      {"value": "Close", "onclick": "CloseDoc()"}\n    ]\n  }\n}}',
+        '{"menu": {\r\n  "id": "file",\r\n  "value": "File",\r\n  "popup": {\r\n    "menuitem": [\r\n      {"value": "New", "onclick": "CreateNewDoc()"},\r\n      {"value": "Open", "onclick": "OpenDoc()"},\r\n      {"value":"Close", "onclick": "CloseDoc()"}\r\n    ]\r\n  }\r\n}}',
         "https://siara.cc",
-        "符号\"δ\"表",
+        '符号"δ"表',
         "学者地”[3]。学者",
         "한데......아무",
         "Beauty is not in the face. Beauty is a light in the heart.",
@@ -251,14 +249,41 @@ def test_decompress_non_int():
         "Hello\x80\x83\xAE\xBC\xBD\xBE",
     ],
 )
-def test_original_suite(raw):
+def test_original_suite(string):
     """
     Verify functionality based on the original test_unishox2.c
     https://github.com/siara-cc/Unishox/blob/d8fafe350446e4be3a05e06a0404a2223d4d972d/test_unishox2.c
     """
-    compressed, original_size = unishox2.compress(raw)
+    compressed, original_size = unishox2.compress(string)
     decompressed = unishox2.decompress(compressed, original_size)
-    assert decompressed == raw
+    assert decompressed == string
+
+
+@pytest.mark.parametrize(
+    "string",
+    [
+        "^",
+        "e",
+        "8Z",
+        "q8Z",
+        "q%8Z",
+        "^r%u7nW",
+        "i7F%R2G!R",
+        "s2S2HCS&^$iT",
+        "WuA4L9Kt^w9M%eXnUWe^",
+        "*$@gHRe%GbhdXw!oE*#smi9x7VFF",
+        "2DdWCAy5xX$Po*p3ZNz%cC6nHee9kP8mowB4#ioAEq5^CG",
+        "Hg@hF&6v^DrV^MDRV&&t4ieSJWFEUGFUf9raVX2^@M2iKgVgCia$9AY*A^XgJyjrtW2UKkLM6nHgD&VGWqjg*rgBPKhdZShsKc#T69e%Zy#wvr6af!BFdZQa%wFdX669(",
+    ],
+)
+def test_high_entropy(string):
+    """
+    Unishox2 seems to struggle in rare cases that data is extremely high entropy.
+    """
+    compressed, original_size = unishox2.compress(string)
+    decompressed = unishox2.decompress(compressed, original_size)
+    assert decompressed == string
+
 
 @given(text())
 @settings(max_examples=10000)

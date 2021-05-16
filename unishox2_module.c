@@ -3,33 +3,38 @@
 #include "./unishox/unishox2.h"
 
 static PyObject * py_unishox_compress(PyObject *self, PyObject *args) {
-    char *uncompressed_input = NULL;
+    char *uncompressed_input;
+    Py_ssize_t uncompressed_input_size;
     /*
      * ":compress" leads to Python referencing this function correctly in the event of
      * an error during PyArg_ParseTuple, like when passing a list instead of a string.
      */
-    if (!PyArg_ParseTuple(args, "s:compress", &uncompressed_input)) {
+    if (!PyArg_ParseTuple(args, "s#:compress", &uncompressed_input, &uncompressed_input_size)) {
         return NULL;
     }
 
-    unsigned long input_length = strlen(uncompressed_input);
-    char *output_buffer = (char *) malloc(input_length + 1);
-    int compressed_size = unishox2_compress_simple(uncompressed_input, strlen(uncompressed_input), output_buffer);
+    /*
+     * We cannot say certainly that the compressed output will be smaller.
+     * This current extra allocation is wasteful, and I'd like to get a better method.
+     */
+    int output_buffer_size = (uncompressed_input_size + 8) * 1.5;
+    char *output_buffer = (char *) malloc(output_buffer_size);
+    int compressed_size = unishox2_compress_simple(uncompressed_input, uncompressed_input_size, output_buffer);
 
     /*
      * Yay. Compression done. Let's build python bytes out of that raw memory!
      * No matter how big our buffer is, the "compressed_size" tells us where the actual
      * data stops. That's where we mark the end.
      */
-    PyObject *py_multi_object = Py_BuildValue("y#k", output_buffer, compressed_size, input_length);
+    PyObject *py_multi_object = Py_BuildValue("y#i", output_buffer, compressed_size, uncompressed_input_size);
     free(output_buffer);
     return py_multi_object;
 }
 
 static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
-    char *compressed_data = NULL;
-    Py_ssize_t compressed_data_size = 0;
-    unsigned long original_data_size = 0;
+    char *compressed_data;
+    Py_ssize_t compressed_data_size;
+    int original_data_size;
 
     /*
      * ":decompress" leads to Python referencing this function correctly in the event of
@@ -37,13 +42,13 @@ static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
      *
      * Note that we *have* to use "y#" because "y" does not allow for NULL bytes.
      */
-    if (!PyArg_ParseTuple(args, "y#k:decompress", &compressed_data, &compressed_data_size, &original_data_size)) {
+    if (!PyArg_ParseTuple(args, "y#i:decompress", &compressed_data, &compressed_data_size, &original_data_size)) {
         return NULL;
     }
 
     /**
      * Notice that this is trusting user input for length, and there is no ability to try or catch.
-     * You put in a number that's too small? Too bad. This *WILL* core dump.
+     * You put in a number that's too small? Too bad. This *WILL* core dump. Too big? No problem.
      * 
      * It's a feature, sorta: https://github.com/siara-cc/Unishox/issues/5
      * 
@@ -70,9 +75,7 @@ static struct PyModuleDef unishox2_module = {
     PyModuleDef_HEAD_INIT,
     "unishox2",                                  // name of module
     "String compression library using Unishox2", // module documentation, may be NULL
-    -1,                                          /* size of per-interpreter state of the
-                                                    module, or -1 if the module keeps
-                                                    state in global variables. */
+    512,
     UnishoxMethods
 };
 

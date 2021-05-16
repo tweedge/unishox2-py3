@@ -10,6 +10,9 @@ parser = argparse.ArgumentParser(
     )
 )
 parser.add_argument("--string", action="store", type=str, help="Your test string!")
+parser.add_argument(
+    "--iterations", action="store", type=int, default=1, help="Iterations!"
+)
 args = parser.parse_args()
 
 example_strings = [
@@ -68,28 +71,35 @@ if not args.string:
 
 pprint(args.string)
 
-print("Compresses to ...")
-compressed, original_size = unishox2.compress(args.string)
-pprint(compressed)
+for i in range(0, args.iterations):
+    print("Compresses to ...")
+    compressed, original_size = unishox2.compress(args.string)
+    pprint(compressed)
 
-print("Decompresses to ...")
-decompressed = unishox2.decompress(compressed, original_size)
-pprint(decompressed)
+    print("Decompresses to ...")
+    decompressed = unishox2.decompress(compressed, original_size)
+    pprint(decompressed)
 
-if args.string == decompressed:
-    print("Test succeeded!")
-    # As `compressed` is already raw bytes, we can also call len() on this ...
-    compressed_size = len(compressed)
-    ratio = 1 - compressed_size / original_size
-    if ratio > 0:
-        print(f"Stored this string with {round(ratio * 100, 2)}% less space")
+    if args.string == decompressed:
+        print("Test succeeded!")
+        # As `compressed` is already raw bytes, we can also call len() on this ...
+        compressed_size = len(compressed)
+        ratio = compressed_size / original_size
+        if ratio < 1:
+            percent = round((1 - ratio) * 100, 2)
+            print(
+                f"Stored this string with {compressed_size}b/{original_size}b = {percent}% less space"
+            )
+        else:
+            percent = round(abs(1 - ratio) * 100, 2)
+            print(
+                f"Stored this string with {compressed_size}b/{original_size}b = {percent}% more space :("
+            )
     else:
-        print(f"Stored this string with {round((1 - ratio) * 100, 2)}% more space :(")
-else:
-    # heck
-    print(
-        "Test failed. Some sequences cannot round trip, this may be expected: "
-        "https://github.com/siara-cc/Unishox/issues/6 - "
-        "However, if the sequence that failed to round trip is not expected, "
-        "please leave an issue: https://github.com/tweedge/unishox2-py3/issues"
-    )
+        # heck
+        print(
+            "Test failed. Some sequences cannot round trip, this may be expected: "
+            "https://github.com/siara-cc/Unishox/issues/6 - "
+            "However, if the sequence that failed to round trip is not expected, "
+            "please leave an issue: https://github.com/tweedge/unishox2-py3/issues"
+        )
