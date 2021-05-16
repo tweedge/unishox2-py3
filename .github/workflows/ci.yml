@@ -1,4 +1,4 @@
-name: codespell
+name: ci
 on: [push]
 jobs:
   build:
@@ -18,10 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install black pytest
-      - name: Lint with black
-        run: |
-          black --check --diff
+          pip install pytest
       - name: Test with pytest
         run: |
           pytest
