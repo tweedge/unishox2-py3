@@ -66,15 +66,16 @@ example_strings = [
 if not args.string:
     args.string = random.choice(example_strings)
 
-pprint(args.string)
+#pprint(args.string)
 
 print("Compresses to ...")
 compressed, original_size = unishox2.compress(args.string)
-pprint(compressed)
+#pprint(compressed)
 
 print("Decompresses to ...")
+print(f"Sending: {int(original_size)}")
 decompressed = unishox2.decompress(compressed, original_size)
-pprint(decompressed)
+#pprint(decompressed)
 
 if args.string == decompressed:
     print("Test succeeded!")
@@ -88,7 +89,7 @@ if args.string == decompressed:
 else:
     # heck
     print(
-        "Test failed. Some sequences cannpot round trip, this may be expected: "
+        "Test failed. Some sequences cannot round trip, this may be expected: "
         "https://github.com/siara-cc/Unishox/issues/6 - "
         "However, if the sequence that failed to round trip is not expected, "
         "please leave an issue: https://github.com/tweedge/unishox2-py3/issues"

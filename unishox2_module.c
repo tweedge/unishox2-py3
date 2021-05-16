@@ -3,17 +3,16 @@
 #include "./unishox/unishox2.h"
 
 static PyObject * py_unishox_compress(PyObject *self, PyObject *args) {
-    char *uncompressed_input;
+    char *uncompressed_input = NULL;
     /*
      * ":compress" leads to Python referencing this function correctly in the event of
      * an error during PyArg_ParseTuple, like when passing a list instead of a string.
      */
-    if (!PyArg_ParseTuple(args, "s:compress", &uncompressed_input))
-    {
+    if (!PyArg_ParseTuple(args, "s:compress", &uncompressed_input)) {
         return NULL;
     }
 
-    int input_length = strlen(uncompressed_input);
+    unsigned long input_length = strlen(uncompressed_input);
     char *output_buffer = (char *)malloc(input_length + 1);
     int compressed_size = unishox2_compress_simple(uncompressed_input, strlen(uncompressed_input), output_buffer);
 
@@ -22,14 +21,15 @@ static PyObject * py_unishox_compress(PyObject *self, PyObject *args) {
      * No matter how big our buffer is, the "compressed_size" tells us where the actual
      * data stops. That's where we mark the end.
      */
-    PyObject *py_bytes_object = Py_BuildValue("y#i", output_buffer, compressed_size, input_length);
+    PyObject *py_multi_object = Py_BuildValue("y#k", output_buffer, compressed_size, input_length);
     free(output_buffer);
-    return py_bytes_object;
+    return py_multi_object;
 }
 
 static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
-    char *compressed_data;
-    int *original_data_size;
+    char *compressed_data = NULL;
+    Py_ssize_t compressed_data_size = 0;
+    unsigned long original_data_size = 0;
 
     /*
      * ":decompress" leads to Python referencing this function correctly in the event of
@@ -37,8 +37,7 @@ static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
      *
      * Note that we *have* to use "y#" because "y" does not allow for NULL bytes.
      */
-    if (!PyArg_ParseTuple(args, "y#i:decompress", &compressed_data, &original_data_size))
-    {
+    if (!PyArg_ParseTuple(args, "y#k:decompress", &compressed_data, &compressed_data_size, &original_data_size)) {
         return NULL;
     }
 
@@ -50,10 +49,11 @@ static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
      * 
      * I recommend calculating and storing the initial string length separately.
      */
-    char *output_buffer = (char *)malloc(1150000); // should be original_data_size
-    int decompressed_size = unishox2_decompress_simple(compressed_data, original_data_size, output_buffer);
+    printf("Received: %d\n", original_data_size);
+    char *output_buffer = (char *) malloc(original_data_size);
+    int decompressed_size = unishox2_decompress_simple(compressed_data, compressed_data_size, output_buffer);
 
-    PyObject *py_string_object = Py_BuildValue("s", output_buffer);
+    PyObject *py_string_object = Py_BuildValue("s", output_buffer, decompressed_size);
     free(output_buffer);
     return py_string_object;
 }
