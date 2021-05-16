@@ -49,7 +49,6 @@ static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
      * 
      * I recommend calculating and storing the initial string length separately.
      */
-    printf("Received: %d\n", original_data_size);
     char *output_buffer = (char *) malloc(original_data_size + 1);
     int decompressed_size = unishox2_decompress_simple(compressed_data, compressed_data_size, output_buffer);
 
