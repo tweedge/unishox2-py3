@@ -1,13 +1,5 @@
-include MANIFEST.in
 include LICENSE.md
 include README.md
-include Pipfile
-include Pipfile.lock
-include pytest.ini
-include tests.py
 include unishox/unishox2.c
 include unishox/unishox2.h
 include unishox2_module.c
-# Exclude generated files
-prune */__pycache__
-global-exclude *.pyc *.pyo *.pyd *.swp *.bak *~
