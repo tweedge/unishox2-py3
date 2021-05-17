@@ -19,7 +19,9 @@ Want to learn more about Unishox2? Read the source paper [here](https://raw.gith
 
 This package is available [on PyPI](https://pypi.org/project/unishox2-py3/), and can be installed with `pip3 install unishox2-py3`. Please note that this package **only** supports Python3, and does not work for Python2 or below. You can see its CI status and testing matrix in this repository's [Actions tab](https://github.com/tweedge/unishox2-py3/actions).
 
-Getting started with unishox2-py3 is easy. It currently provides two APIs that pass data to Unishox2's corresponding `simple` APIs - accepting the default optimization preset, which is good for most data. These are:
+Getting started with unishox2-py3 is easy. If you want to give it a try via the command line, you can use [demo.py](https://github.com/tweedge/unishox2-py3/blob/main/demo.py) to compress some sample strings or try one of your own.
+
+If you're looking to integrate, unishox2-py3 currently provides two APIs that pass data to Unishox2's corresponding `simple` APIs - accepting the default optimization preset, which is good for most data. These are:
 
 * `unishox2.compress(str)`
   * Arguments:
