@@ -25,8 +25,8 @@ Getting started with unishox2-py3 is easy. It currently provides two APIs that p
   * Arguments:
     * `str` - This requires a Unicode string as input (generally, this is your default in Python).
   * Returns a tuple: 
-    * `compressed_data` - Bytes, the compressed data.
-    * `original_size` - An integer, the original length of the string.
+    * `bytes` - The compressed data.
+    * `int` - The original length of the string.
 * `unishox2.decompress(bytes, int)`
   * Takes two arguments:
     * `bytes` - The compressed data.
