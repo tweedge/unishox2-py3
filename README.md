@@ -22,15 +22,17 @@ This package is available [on PyPI](https://pypi.org/project/unishox2-py3/), and
 Getting started with unishox2-py3 is easy. It currently provides two APIs that pass data to Unishox2's corresponding `simple` APIs - accepting the default optimization preset, which is good for most data. These are:
 
 * `unishox2.compress(str)`
-  * Arguments: This requires a Unicode string as input (generally, this is your default in Python).
+  * Arguments:
+    * `str` - This requires a Unicode string as input (generally, this is your default in Python).
   * Returns a tuple: 
     * `compressed_data` - Bytes, the compressed data.
     * `original_size` - An integer, the original length of the string.
 * `unishox2.decompress(bytes, int)`
-  * Arguments:
+  * Takes two arguments:
     * `bytes` - The compressed data.
     * `int` - The original length of the string.
-  * Returns: A string, the original data.
+  * Returns:
+    * `str` - A string, the original data.
 
 Taken together, this looks like:
 
@@ -68,7 +70,7 @@ The last note to make is that Unishox2 doesn't guarantee 1:1 parity with the sou
 
 > There are other types of full-stops used in other languages. For example, Hindi uses a kind of pipe symbol to indicate full-stop. However, to avoid confusion, this is left to delta coding, since it does not make much difference in compression ratio
 
-Additional discussion on the above [here](https://github.com/siara-cc/Unishox/issues/6).
+Additional discussion on the above is [here](https://github.com/siara-cc/Unishox/issues/6).
 
 ### Performance
 
