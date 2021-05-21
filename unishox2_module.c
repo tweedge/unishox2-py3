@@ -65,17 +65,17 @@ static PyObject * py_unishox_decompress(PyObject *self, PyObject *args) {
 // Which methods are exposed to the python world, including their docstrings.
 static PyMethodDef UnishoxMethods[] = {
     {"compress", py_unishox_compress, METH_VARARGS,
-     "Compresses a string using unishox2 compression.\n\nArgs:\n    string: An input string\nReturns:\n    bytes: The input string compressed via unishox2 compression."},
+     "Compresses a string using unishox2 compression.\n\nArgs:\n    string: An input string.\nReturns:\n    bytes: A unishox2-compressed array of bytes.\n    int: The number of bytes to allocate for output."},
     {"decompress", py_unishox_decompress, METH_VARARGS,
-     "Decompresses a unishox2 compressed string.\n\nArgs:\n    bytes: A unishox2 compressed input string\n    int: The number of bytes to allocate for output\nReturns:\n    string: The input string decompressed via unishox2 decompression."},
+     "Decompresses a unishox2 compressed string.\n\nArgs:\n    bytes: A unishox2-compressed array of bytes.\n    int: The number of bytes to allocate for output.\nReturns:\n    string: The decompressed, near-original string."},
     {NULL, NULL, 0, NULL} /* Sentinel */
 };
 
 static struct PyModuleDef unishox2_module = {
     PyModuleDef_HEAD_INIT,
-    "unishox2",                                  // name of module
-    "String compression library using Unishox2", // module documentation, may be NULL
-    512,
+    "unishox2",
+    "String compression library using Unishox2",
+    0,
     UnishoxMethods
 };
 

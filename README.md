@@ -10,7 +10,7 @@ This package enables Python projects to easily use Unishox2 from [siara-cc/Unish
 * ✅ Bandwidth and storage cost reduction for databases and/or cloud services.
 * ⚠️ Byte columns can result in a faster retrieval speed when used as join keys in RDBMSes.
   * *Author's note: haven't tested this, but I'd trust the claim generally*
-* ⛔️ Compression for low memory devices such as Arduino and ESP8266
+* ⛔️ Compression for low memory devices such as Arduino and ESP8266.
   * *Author's note: just use the C bindings for this, they're very approachable*
 
 Want to learn more about Unishox2? Read the source paper [here](https://raw.githubusercontent.com/siara-cc/Unishox/master/Unishox_Article_2.pdf).
@@ -51,7 +51,7 @@ compressed_data, original_size = unishox2.compress(original_data)
 
 # to get the original string back, we need compressed_data AND original_size
 decompressed_data = unishox2.decompress(compressed_data, original_size)
-# decompressed_data now holds a string, such as "What the developers know: ..."
+# decompressed_data now holds a string, such as "What the developers know:\n..."
 ```
 
 ### Important Notes
@@ -64,21 +64,18 @@ Conversely, if you give an `original_size` value that is too small, too little m
 
 The last note to make is that Unishox2 doesn't guarantee 1:1 parity with the source text. In particular, full-stops will be assigned during decompression in a 'best-guess' manner:
 
-> 6.13 Encoding punctuations
-
-> Some languages, such as Japanese and Chinese use their own punctuation characters. For example full-stop is indicated using U+3002 which is represented visually as a small circle.
-
-> So when encountering a Japanese full-stop, the special code for full-stop is used, only in this case, the decoder is expected to decode it as U+3002 instead of ’.’. In general, if the prior Unicode character is greater than U+3000, then the special full-stop is decoded.
-
-> There are other types of full-stops used in other languages. For example, Hindi uses a kind of pipe symbol to indicate full-stop. However, to avoid confusion, this is left to delta coding, since it does not make much difference in compression ratio
+>6.11 Encoding punctuation
+>• Some languages such as Japanese and Chinese use their own punctuation characters. For example, full-stop is indicated using U+3002 which is represented visually as a small circle.
+>• So when encountering a Japanese full-stop, the special code for full-stop is used, only in this case, the decoder is expected to decode it as U+3002 instead of ’.’. In general, if the prior Unicode character is greater than U+3000, then the special full-stop is decoded.
+> ...
 
 Additional discussion on the above is [here](https://github.com/siara-cc/Unishox/issues/6).
 
 ### Performance
 
-While Unishox doesn't provide *guaranteed* compression for *all* short strings, it tends to provide better compression than many competitors in real-world usecases for short string compression.
+While Unishox doesn't provide *guaranteed* compression for *all* short strings (see the test cases for some examples where the output is larger than the input), it tends to provide better compression than many competitors in real-world usecases for short string compression. In addition, as unishox2-py3 is using a C module instead of reimplementing Unishox2 in Python, there is minimal performance loss across most applications.
 
-When tested on Reddit data (technical subreddits, mostly English-oriented, ~2m entries), the average number of bytes required for storing each post's title was:
+When tested on Reddit data (technical subreddits, mostly English-oriented, ~3m entries), the average number of bytes required for storing each post's title was:
 * Original: 125.12
 * zlib(1): 94.82 (-24.21%)
 * zlib(9): 94.80 (-24.23%)
@@ -92,7 +89,7 @@ And the average number of bytes required for storing each post's body text was:
 * smaz: 401.96 (-43.76%)
 * Unishox2: 343.58 (-51.93%)
 
-Unishox2 would be expected to pull farther ahead of smaz for non-English posts as well, though I don't have data to test that.
+Unishox2 would be expected to pull farther ahead of smaz for non-English posts as well, though I don't have data to test that. I welcome a PR with additional tests.
 
 ### Credits
 
