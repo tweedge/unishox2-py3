@@ -65,8 +65,11 @@ Conversely, if you give an `original_size` value that is too small, too little m
 The last note to make is that Unishox2 doesn't guarantee 1:1 parity with the source text. In particular, full-stops will be assigned during decompression in a 'best-guess' manner:
 
 >6.11 Encoding punctuation
+
 >• Some languages such as Japanese and Chinese use their own punctuation characters. For example, full-stop is indicated using U+3002 which is represented visually as a small circle.
+
 >• So when encountering a Japanese full-stop, the special code for full-stop is used, only in this case, the decoder is expected to decode it as U+3002 instead of ’.’. In general, if the prior Unicode character is greater than U+3000, then the special full-stop is decoded.
+
 > ...
 
 Additional discussion on the above is [here](https://github.com/siara-cc/Unishox/issues/6).
