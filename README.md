@@ -66,21 +66,28 @@ Conversely, if you give an `original_size` value that is too small, too little m
 
 While Unishox doesn't provide *guaranteed* compression for *all* short strings (see the test cases for some examples where the output is larger than the input), it tends to provide better compression than many competitors in real-world usecases for short string compression. In addition, as unishox2-py3 is using a C module instead of reimplementing Unishox2 in Python, there is acceptable performance loss across most applications.
 
-When tested on Reddit data (technical subreddits, mostly English-oriented, ~3m entries), the average number of bytes required for storing each post's title was:
-* Original: 125.12
-* zlib(1): 94.82 (-24.21%)
-* zlib(9): 94.80 (-24.23%)
-* smaz: 76.45 (-38.90%)
-* Unishox2: 73.07 (-41.60%)
+When tested on Reddit data (technical subreddits, mostly English-oriented, 3.3m entries), the average number of bytes required for storing each post's title was:
+* Original: 60.34
+* zlib(1): 61.83 (+2.47%)
+* zlib(9): 61.80 (+2.42%)
+* smaz: 43.46 (-27.98%)
+* Unishox2: 40.08 (-33.58%)
 
-And the average number of bytes required for storing each post's body text was:
-* Original: 714.82
-* zlib(1): 352.95 (-50.62%)
-* zlib(9): 345.90 (-51.61%)
-* smaz: 401.96 (-43.76%)
-* Unishox2: 343.58 (-51.93%)
+And the average number of bytes required for storing each text post's body was:
+* Original: 561.07
+* zlib(1): 319.93 (-42.98%)
+* zlib(9): 312.87 (-44.23%)
+* smaz: 369.04 (-34.23%)
+* Unishox2: 310.56 (-44.65%)
 
-Unishox2 would be expected to pull farther ahead of smaz for non-English posts as well, though I don't have data to test that. I welcome a PR with additional tests.
+And the average number of bytes required for storing the URL that any link posts pointed to:
+* Original: 25.72
+* zlib(1): 30.08 (+16.96%)
+* zlib(9): 30.08 (+16.96%)
+* smaz: 20.78 (-19.21%)
+* Unishox2: 19.76 (-23.16%)
+
+Unishox2 shows clear benefits over traditional compressors when compressing short strings, and maintains comparable performance even to moderate-length documents. Unishox2 would be expected to pull farther ahead of smaz for non-English posts as well, though I don't have data to test that. I welcome a PR with additional tests.
 
 ### Credits
 
