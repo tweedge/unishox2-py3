@@ -62,21 +62,9 @@ As mentioned before, any reasonable maximum for the resultant data also works. S
 
 Conversely, if you give an `original_size` value that is too small, too little memory will be allocated. This means that Unishox2 will write past the memory boundary (as it's C under the hood, which is just bound to Python via a module), and your Python program will crash.
 
-The last note to make is that Unishox2 doesn't guarantee 1:1 parity with the source text. In particular, full-stops will be assigned during decompression in a 'best-guess' manner:
-
->6.11 Encoding punctuation
-
->• Some languages such as Japanese and Chinese use their own punctuation characters. For example, full-stop is indicated using U+3002 which is represented visually as a small circle.
-
->• So when encountering a Japanese full-stop, the special code for full-stop is used, only in this case, the decoder is expected to decode it as U+3002 instead of ’.’. In general, if the prior Unicode character is greater than U+3000, then the special full-stop is decoded.
-
-> ...
-
-Additional discussion on the above is [here](https://github.com/siara-cc/Unishox/issues/6).
-
 ### Performance
 
-While Unishox doesn't provide *guaranteed* compression for *all* short strings (see the test cases for some examples where the output is larger than the input), it tends to provide better compression than many competitors in real-world usecases for short string compression. In addition, as unishox2-py3 is using a C module instead of reimplementing Unishox2 in Python, there is minimal performance loss across most applications.
+While Unishox doesn't provide *guaranteed* compression for *all* short strings (see the test cases for some examples where the output is larger than the input), it tends to provide better compression than many competitors in real-world usecases for short string compression. In addition, as unishox2-py3 is using a C module instead of reimplementing Unishox2 in Python, there is acceptable performance loss across most applications.
 
 When tested on Reddit data (technical subreddits, mostly English-oriented, ~3m entries), the average number of bytes required for storing each post's title was:
 * Original: 125.12
