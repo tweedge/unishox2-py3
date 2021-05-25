@@ -1,5 +1,8 @@
 name: ci
+
+# secret use is OK per https://github.community/t/how-secure-are-secrets/139115
 on: [push, pull_request]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -71,7 +74,7 @@ jobs:
         with:
           submodules: recursive
       - name: manylinux
-        uses: Niraj-Kamdar/manylinux-wheel-builder@master
+        uses: Niraj-Kamdar/manylinux-wheel-builder@5f4d9f097e5a496a7bb13cb33bf75e6311fe153c
         with:
           python-versions: "3.*"
 
