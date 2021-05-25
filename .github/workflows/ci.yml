@@ -63,6 +63,7 @@ jobs:
           skip: ./.git,./demo.py,./tests.py
 
   dist-manylinux:
+    needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
@@ -79,6 +80,7 @@ jobs:
           python-versions: "3.*"
 
   dist-os-matrix:
+    needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
     env:
