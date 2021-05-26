@@ -4,10 +4,11 @@ name: ci
 on: [push, pull_request]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  pytest:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
         python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
     steps:
       - name: Checkout repository and submodules
@@ -63,7 +64,7 @@ jobs:
           skip: ./.git,./demo.py,./tests.py
 
   dist-manylinux:
-    needs: build
+    needs: pytest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
@@ -80,7 +81,7 @@ jobs:
           python-versions: "3.*"
 
   dist-os-matrix:
-    needs: build
+    needs: pytest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
     env:
