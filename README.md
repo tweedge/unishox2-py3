@@ -25,7 +25,7 @@ If you're looking to integrate, unishox2-py3 currently provides two APIs that pa
 
 * `unishox2.compress(str)`
   * Arguments:
-    * `str` - This requires a Unicode string as input (generally, this is your default in Python).
+    * `str` - This requires a string as input (generally, Unicode-encoded).
   * Returns a tuple: 
     * `bytes` - The compressed data.
     * `int` - The original length of the string.
@@ -87,7 +87,27 @@ And the average number of bytes required for storing the URL that any link posts
 * smaz: 20.78 (-19.21%)
 * Unishox2: 19.76 (-23.16%)
 
-Unishox2 shows clear benefits over traditional compressors when compressing short strings, and maintains comparable performance even to moderate-length documents. Unishox2 would be expected to pull farther ahead of smaz for non-English posts as well, though I don't have data to test that. I welcome a PR with additional tests.
+Unishox2 shows clear benefits over traditional compressors when compressing short strings, and maintains comparable performance even to moderate-length documents. Unishox2 would be expected to pull farther ahead of smaz for non-English posts as well, though I don't have data to test that. I welcome a PR with additional performance tests.
+
+### Integration Tests
+
+The original test suite from [test_unishox2.c](https://github.com/siara-cc/Unishox/blob/d8fafe350446e4be3a05e06a0404a2223d4d972d/test_unishox2.c) has been copied.
+
+Tests were added to ensure the Python-to-C binding is type safe:
+- Ensuring `compress()` only takes strings
+- Ensuring `decompress()` only takes bytes and an integer
+  - Though it will still take a negative integer, and instantly crash, so... don't do that
+- Ensuring `compress()` won't take a Unicode surrogate e.g. `\ud800`
+
+Tests were also added to check certain edge cases:
+- Ensuring Unishox2 allocates enough memory for rare, very-high-entropy strings which are enlarged when encoded by Unishox2
+- Ensuring Unishox2 works with ASCII inputs
+
+And finally, [hypothesis](https://hypothesis.readthedocs.io/en/latest/) based property testing was added to generate random inputs which:
+- Build confidence that as long as a *minimum* length is known for strings, decompression will always work, and original_size doesn't need to be saved
+  - This runs 2,500 tests which allocate 44 bytes <= x <= 1 gigabyte for decompression
+- Build confidence that Unishox2 is resilient and functional when presented with arbitrary Unicode input
+  - This runs 25,000 tests which generate valid Unicode of any length and composition
 
 ### Credits
 
