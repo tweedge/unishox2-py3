@@ -98,8 +98,5 @@ for i in range(0, args.iterations):
     else:
         # heck
         print(
-            "Test failed. Some sequences cannot round trip, this may be expected: "
-            "https://github.com/siara-cc/Unishox/issues/6 - "
-            "However, if the sequence that failed to round trip is not expected, "
-            "please leave an issue: https://github.com/tweedge/unishox2-py3/issues"
+            "Test failed. Please leave an issue! https://github.com/tweedge/unishox2-py3/issues"
         )
