@@ -4,7 +4,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/unishox2-py3)](https://pypi.org/project/unishox2-py3/)
 [![Code Style](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
 
-This package enables Python projects to easily use Unishox2 from [siara-cc/Unishox](https://github.com/siara-cc/Unishox/), which is a C library for compressing short strings. Unishox2 has many potential applications, and this package can enable developers to make use of it for several of those:
+This package enables Python projects to easily use Unishox2 from [siara-cc/Unishox](https://github.com/siara-cc/Unishox2), which is a C library for compressing short strings. Unishox2 has many potential applications, and this package can enable developers to make use of it for several of those:
 
 * ✅ Unicode-native text compression. Unishox2 is **NOT** English- or ASCII-only!
 * ✅ Bandwidth and storage cost reduction for databases and/or cloud services.
@@ -13,7 +13,7 @@ This package enables Python projects to easily use Unishox2 from [siara-cc/Unish
 * ⛔️ Compression for low memory devices such as Arduino and ESP8266.
   * *Author's note: just use the C bindings for this, they're very approachable*
 
-Want to learn more about Unishox2? Read the source paper [here](https://raw.githubusercontent.com/siara-cc/Unishox/master/Unishox_Article_2.pdf).
+Want to learn more about Unishox2? Read the source paper [here](https://github.com/siara-cc/Unishox2/blob/master/Unishox_Article_2.pdf?raw=true).
 
 ### How to Use
 
