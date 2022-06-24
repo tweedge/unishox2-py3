@@ -12,7 +12,7 @@ if __name__ == "__main__":
                 "unishox2",
                 [
                     path.join(here, "unishox2_module.c"),
-                    path.join(here, "unishox", "unishox2.c"),
+                    path.join(here, "Unishox2", "unishox2.c"),
                 ],
             )
         ]

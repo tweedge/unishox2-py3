@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        python-version: [3.5, 3.6, 3.7, 3.8, 3.9, 3.10]
+        python-version: ["3.5", "3.6", "3.7", "3.8", "3.9", "3.10"]
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v2
@@ -75,10 +75,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: manylinux
-        uses: Niraj-Kamdar/manylinux-wheel-builder@5f4d9f097e5a496a7bb13cb33bf75e6311fe153c
+      - name: Build manylinux Python wheels
+        uses: RalfG/python-wheels-manylinux-build@v0.4.2-manylinux2014_x86_64
         with:
-          python-versions: "3.*"
+          python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39 cp310-cp310'
+      - name: upload wheel
+        run: |
+          pip install twine
+          twine upload dist/*
 
   dist-os-matrix:
     needs: pytest
@@ -90,7 +94,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9, 3.10]
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v2

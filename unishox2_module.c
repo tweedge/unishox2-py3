@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "./unishox/unishox2.h"
+#include "./Unishox2/unishox2.h"
 
 static PyObject * py_unishox_compress(PyObject *self, PyObject *args) {
     char *uncompressed_input;
