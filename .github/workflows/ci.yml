@@ -104,7 +104,11 @@ jobs:
         uses: pypa/cibuildwheel@v2.8.0
         env:
           CIBW_ARCHS_MACOS: arm64
-      - name: Upload wheels
+      - name: Set up Python 3.10 (for Twine)
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Upload wheels with Twine
         run: |
           pip install twine
           twine upload wheelhouse/* --skip-existing
