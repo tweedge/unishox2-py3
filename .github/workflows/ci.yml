@@ -87,6 +87,27 @@ jobs:
         run: |
           pip install twine
           twine upload wheelhouse/* --skip-existing
+          
+  dist-cibuildwheel-macos-arm64:
+    needs: pytest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+    env:
+      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.8.0
+        env:
+          CIBW_ARCHS_MACOS: arm64
+      - name: Upload wheels
+        run: |
+          pip install twine
+          twine upload wheelhouse/* --skip-existing
 
   dist-os-matrix:
     needs: pytest
