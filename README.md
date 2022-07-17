@@ -115,9 +115,11 @@ Tests were also added to check certain edge cases:
 
 And finally, [hypothesis](https://hypothesis.readthedocs.io/en/latest/) based property testing was added to generate random inputs which:
 - Build confidence that as long as a *minimum* length is known for strings, decompression will always work, and original_size doesn't need to be saved
-  - This runs 2,500 tests which allocate 44 bytes <= x <= 1 gigabyte for decompression
+  - This runs 25,000 tests which allocate 44 bytes <= x <= 1 gigabyte for decompression
 - Build confidence that Unishox2 is resilient and functional when presented with arbitrary Unicode input
   - This runs 25,000 tests which generate valid Unicode of any length and composition
+
+*Note: 25k property tests per test type are only used for testing when compiled to x86, tests of each built package (ex. for aarch64) only run 100 property tests per test type per package. This aslongside other tests provides assurance that unishox2-py3 is working as intended, but not **as much** assurance as is given to x86.*
 
 ### Credits
 
