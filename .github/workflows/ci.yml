@@ -95,6 +95,7 @@ jobs:
           CIBW_ARCHS_MACOS: all
           CIBW_ARCHS_LINUX: all
           CIBW_TEST_COMMAND: pytest
+          CIBW_TEST_REQUIRES: pytest hypothesis
       - name: Upload wheels
         run: |
           pip install twine
