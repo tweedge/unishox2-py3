@@ -119,7 +119,7 @@ And finally, [hypothesis](https://hypothesis.readthedocs.io/en/latest/) based pr
 - Build confidence that Unishox2 is resilient and functional when presented with arbitrary Unicode input
   - This runs 25,000 tests which generate valid Unicode of any length and composition
 
-*Note: 25k property tests per test type are only used for testing when compiled to x86, tests of each built package (ex. for aarch64) only run 100 property tests per test type per package. This aslongside other tests provides assurance that unishox2-py3 is working as intended, but not **as much** assurance as is given to x86.*
+*Note: 25k property tests per test type are only used for testing when compiled to x86, tests of each built package (ex. for aarch64) only run 100 property tests per test type per package. This alongside other tests provides assurance that unishox2-py3 is working as intended, but not **as much** assurance as x86.*
 
 ### Credits
 
