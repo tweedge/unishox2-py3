@@ -90,7 +90,10 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.8.0
         env:
-          CIBW_ARCHS: all
+          # need to research Windows ARM
+          CIBW_ARCHS_WINDOWS: auto
+          CIBW_ARCHS_MACOS: all
+          CIBW_ARCHS_LINUX: all
       - name: Upload wheels
         run: |
           pip install twine
