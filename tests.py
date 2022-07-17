@@ -4,6 +4,7 @@ from hypothesis.strategies import integers, text
 
 import unishox2
 
+
 def test_ok():
     """
     Simple test case.
