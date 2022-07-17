@@ -26,9 +26,9 @@ jobs:
       - name: Build unishox2
         run: |
           pip install .
-      - name: Test with pytest
+      - name: Extended test with pytest
         run: |
-          pytest
+          pytest --hypothesis-profile ci
 
   lint:
     runs-on: ubuntu-latest
@@ -87,13 +87,14 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           platforms: all
-      - name: Build wheels
+      - name: Build and test wheels
         uses: pypa/cibuildwheel@v2.8.0
         env:
           # need to research Windows ARM
           CIBW_ARCHS_WINDOWS: auto
           CIBW_ARCHS_MACOS: all
           CIBW_ARCHS_LINUX: all
+          CIBW_TEST_COMMAND: pytest
       - name: Upload wheels
         run: |
           pip install twine

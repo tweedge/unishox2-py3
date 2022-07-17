@@ -15,6 +15,14 @@ This package enables Python projects to easily use Unishox2 from [siara-cc/Unish
 
 Want to learn more about Unishox2? Read the source paper [here](https://github.com/siara-cc/Unishox2/blob/master/Unishox_Article_2.pdf?raw=true).
 
+### OS/Architecture Support
+
+Since unishox2-py3 includes a C library, it must be built specifically for each CPU architecture and OS in use. Wheels are built and tested for many platforms via [cibuildwheel](https://github.com/pypa/cibuildwheel) and can be downloaded from PyPI, allowing for unishox2-py3 to be used with the following platforms out-of-the-box:
+
+* Linux: x86_64, i686, aarch64, ppc64le, s390x
+* MacOS: x86_64, arm64, universal2
+* Windows: AMD64, x86
+
 ### How to Use
 
 This package is available [on PyPI](https://pypi.org/project/unishox2-py3/), and can be installed with `pip3 install unishox2-py3`. Please note that this package **only** supports Python3, and does not work for Python2 or below. You can see its CI status and testing matrix in this repository's [Actions tab](https://github.com/tweedge/unishox2-py3/actions).
