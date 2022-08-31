@@ -1,5 +1,5 @@
 include LICENSE.md
 include README.md
-include unishox/unishox2.c
-include unishox/unishox2.h
+include Unishox2/unishox2.c
+include Unishox2/unishox2.h
 include unishox2_module.c

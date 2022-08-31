@@ -63,6 +63,30 @@ jobs:
           check_filenames: true
           skip: ./.git,./demo.py,./tests.py
 
+  source_dist:
+    needs: pytest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: build wheel
+        run: |
+          python setup.py sdist
+      - name: upload wheel
+        run: |
+          pip install twine
+          twine upload dist/* --skip-existing
+
   cibuildwheel:
     needs: pytest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
