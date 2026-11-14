@@ -99,15 +99,69 @@ jobs:
 
   # Builds and tests wheels on every push and PR so a broken wheel build is
   # caught before merge. Previously this job was main-only, which is how a broken
-  # wheel build shipped through a PR; it now runs everywhere and only the publish
-  # job below uploads, and only after every build has succeeded.
+  # wheel build shipped through a PR.
+  #
+  # The matrix is sharded deliberately. cibuildwheel builds one interpreter at a
+  # time, so a single job doing every arch x every Python version is fully
+  # serial and painfully slow -- especially the emulated Linux arches (aarch64,
+  # ppc64le, s390x under QEMU). Because wheels are now collected by the publish
+  # job at the end, each shard can run in parallel on its own runner.
+  #
+  # Shards: Linux is split by architecture and each arch (except fast native
+  # x86_64) is split into two Python-version groups; macOS and Windows are split
+  # by Python group. Group A = 3.9-3.12, group B = 3.13-3.15 (the "cp31x*"
+  # patterns also catch the free-threaded "t" variants).
   cibuildwheel:
     needs: pytest
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+            archs: "x86_64"
+            build: "cp39* cp310* cp311* cp312* cp313* cp314* cp315*"
+          - name: linux-aarch64-a
+            os: ubuntu-latest
+            archs: "aarch64"
+            build: "cp39* cp310* cp311* cp312*"
+          - name: linux-aarch64-b
+            os: ubuntu-latest
+            archs: "aarch64"
+            build: "cp313* cp314* cp315*"
+          - name: linux-ppc64le-a
+            os: ubuntu-latest
+            archs: "ppc64le"
+            build: "cp39* cp310* cp311* cp312*"
+          - name: linux-ppc64le-b
+            os: ubuntu-latest
+            archs: "ppc64le"
+            build: "cp313* cp314* cp315*"
+          - name: linux-s390x-a
+            os: ubuntu-latest
+            archs: "s390x"
+            build: "cp39* cp310* cp311* cp312*"
+          - name: linux-s390x-b
+            os: ubuntu-latest
+            archs: "s390x"
+            build: "cp313* cp314* cp315*"
+          - name: macos-a
+            os: macos-latest
+            archs: "x86_64 arm64 universal2"
+            build: "cp39* cp310* cp311* cp312*"
+          - name: macos-b
+            os: macos-latest
+            archs: "x86_64 arm64 universal2"
+            build: "cp313* cp314* cp315*"
+          - name: windows-a
+            os: windows-latest
+            archs: "AMD64 x86"
+            build: "cp39* cp310* cp311* cp312*"
+          - name: windows-b
+            os: windows-latest
+            archs: "AMD64 x86"
+            build: "cp313* cp314* cp315*"
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v4
@@ -125,19 +179,14 @@ jobs:
       - name: Build and test wheels
         uses: pypa/cibuildwheel@v4.3.5
         env:
-          CIBW_ARCHS_WINDOWS: auto
-          CIBW_ARCHS_MACOS: "x86_64 arm64 universal2"
-          # Keep the arches 1.0.0 shipped except i686, whose QEMU-emulated
-          # container intermittently loses DNS for pip and fails the whole job.
-          # (riscv64/armv7l are new to cibuildwheel and are slow, low-value
-          # QEMU targets, so they are left out too.)
-          CIBW_ARCHS_LINUX: "x86_64 aarch64 ppc64le s390x"
+          CIBW_ARCHS: ${{ matrix.archs }}
+          CIBW_BUILD: ${{ matrix.build }}
           CIBW_TEST_COMMAND: pytest {package}
           CIBW_TEST_REQUIRES: pytest hypothesis
       - name: Upload wheels artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-${{ matrix.name }}
           path: wheelhouse/*.whl
           if-no-files-found: error
 
