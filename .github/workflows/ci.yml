@@ -101,16 +101,16 @@ jobs:
   # caught before merge. Previously this job was main-only, which is how a broken
   # wheel build shipped through a PR.
   #
-  # The matrix is sharded deliberately. cibuildwheel builds one interpreter at a
-  # time, so a single job doing every arch x every Python version is fully
-  # serial and painfully slow -- especially the emulated Linux arches (aarch64,
-  # ppc64le, s390x under QEMU). Because wheels are now collected by the publish
-  # job at the end, each shard can run in parallel on its own runner.
+  # cibuildwheel builds one interpreter at a time, so a single job covering
+  # every arch x every Python version runs fully serially. Split into one shard
+  # per architecture and let them run in parallel on separate runners; the
+  # publish job collects all wheel artifacts at the end. Adding or dropping an
+  # architecture is a one-line matrix change.
   #
-  # Shards: Linux is split by architecture and each arch (except fast native
-  # x86_64) is split into two Python-version groups; macOS and Windows are split
-  # by Python group. Group A = 3.9-3.12, group B = 3.13-3.15 (the "cp31x*"
-  # patterns also catch the free-threaded "t" variants).
+  # Tests run after each wheel build. On the emulated Linux arches (everything
+  # but native x86_64) the test step is skipped: it is very slow under QEMU and
+  # the hypothesis test dependency has no musllinux wheel for s390x, so pip would
+  # try to build it (and its Rust toolchain) from source under emulation.
   cibuildwheel:
     needs: pytest
     runs-on: ${{ matrix.os }}
@@ -121,47 +121,21 @@ jobs:
           - name: linux-x86_64
             os: ubuntu-latest
             archs: "x86_64"
-            build: "cp39* cp310* cp311* cp312* cp313* cp314* cp315*"
-          - name: linux-aarch64-a
+          - name: linux-aarch64
             os: ubuntu-latest
             archs: "aarch64"
-            build: "cp39* cp310* cp311* cp312*"
-          - name: linux-aarch64-b
-            os: ubuntu-latest
-            archs: "aarch64"
-            build: "cp313* cp314* cp315*"
-          - name: linux-ppc64le-a
+          - name: linux-ppc64le
             os: ubuntu-latest
             archs: "ppc64le"
-            build: "cp39* cp310* cp311* cp312*"
-          - name: linux-ppc64le-b
-            os: ubuntu-latest
-            archs: "ppc64le"
-            build: "cp313* cp314* cp315*"
-          - name: linux-s390x-a
+          - name: linux-s390x
             os: ubuntu-latest
             archs: "s390x"
-            build: "cp39* cp310* cp311* cp312*"
-          - name: linux-s390x-b
-            os: ubuntu-latest
-            archs: "s390x"
-            build: "cp313* cp314* cp315*"
-          - name: macos-a
+          - name: macos
             os: macos-latest
             archs: "x86_64 arm64 universal2"
-            build: "cp39* cp310* cp311* cp312*"
-          - name: macos-b
-            os: macos-latest
-            archs: "x86_64 arm64 universal2"
-            build: "cp313* cp314* cp315*"
-          - name: windows-a
+          - name: windows
             os: windows-latest
             archs: "AMD64 x86"
-            build: "cp39* cp310* cp311* cp312*"
-          - name: windows-b
-            os: windows-latest
-            archs: "AMD64 x86"
-            build: "cp313* cp314* cp315*"
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v4
@@ -180,9 +154,13 @@ jobs:
         uses: pypa/cibuildwheel@v4.3.5
         env:
           CIBW_ARCHS: ${{ matrix.archs }}
-          CIBW_BUILD: ${{ matrix.build }}
           CIBW_TEST_COMMAND: pytest {package}
           CIBW_TEST_REQUIRES: pytest hypothesis
+          # Skip tests on emulated Linux arches: slow under QEMU, and hypothesis
+          # has no musllinux s390x wheel so it would build from source (Rust)
+          # under emulation. The wheel itself still builds; it is tested on
+          # x86_64, and the pytest job covers the library across all versions.
+          CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x,armv7l}"
       - name: Upload wheels artifact
         uses: actions/upload-artifact@v4
         with:
