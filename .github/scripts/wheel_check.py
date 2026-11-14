@@ -8,6 +8,7 @@ Exit codes:
 Checked weekly by .github/workflows/wheel-check.yml. See issue #8.
 """
 
+import http.client
 import json
 import re
 import sys
@@ -19,11 +20,17 @@ ROOT = Path(__file__).resolve().parents[2]
 PYPI_JSON = "https://pypi.org/pypi/{name}/json"
 
 # A release must provide at least one wheel matching each platform family for
-# every supported CPython minor. Substrings are matched against wheel filenames.
+# every supported CPython minor. Each entry is matched against wheel filenames:
+# every "all" substring must be present, and at least one "any" substring.
+# Anchoring on the platform marker (e.g. "macosx") keeps a Linux wheel from
+# satisfying a macOS check just because both mention "x86_64".
 PLATFORM_CHECKS = {
-    "Windows (win_amd64)": "win_amd64",
-    "macOS (universal2/arm64/x86_64)": ("universal2", "arm64", "x86_64"),
-    "Linux (manylinux x86_64)": "manylinux",
+    "Windows (win_amd64)": {"all": ("win_amd64",), "any": ()},
+    "macOS (universal2/arm64/x86_64)": {
+        "all": ("macosx",),
+        "any": ("universal2", "arm64", "x86_64"),
+    },
+    "Linux (manylinux x86_64)": {"all": ("manylinux", "x86_64"), "any": ()},
 }
 
 
@@ -31,7 +38,13 @@ def fetch_json(url):
     try:
         with urllib.request.urlopen(url, timeout=30) as resp:
             return json.load(resp)
-    except (urllib.error.URLError, json.JSONDecodeError, TimeoutError) as exc:
+    except (
+        urllib.error.URLError,
+        http.client.HTTPException,
+        OSError,
+        json.JSONDecodeError,
+        TimeoutError,
+    ) as exc:
         print(f"ERROR: could not fetch {url}: {exc}", file=sys.stderr)
         print(
             "This is a connectivity/API failure, not a drift signal; "
@@ -59,8 +72,10 @@ def has_platform_wheel(filename, cp_version, platform):
         return False
     if not re.search(rf"-{tag}-{tag}-", filename):
         return False
-    needles = platform if isinstance(platform, tuple) else (platform,)
-    return any(n in filename for n in needles)
+    if not all(n in filename for n in platform["all"]):
+        return False
+    wanted = platform["any"]
+    return not wanted or any(n in filename for n in wanted)
 
 
 def main():

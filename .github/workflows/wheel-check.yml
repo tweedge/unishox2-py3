@@ -38,12 +38,12 @@ jobs:
         run: |
           title="Published wheels are stale"
           body="The weekly wheel-check detected drift. See the failing run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          existing=$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number')
+          existing=$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body"
           else
             gh issue create --title "$title" --body "$body"
           fi
       - name: Fail the run so drift or check errors are visible
-        if: steps.drift.outputs.exitcode != '0'
+        if: always() && steps.drift.outputs.exitcode != '0'
         run: exit 1
