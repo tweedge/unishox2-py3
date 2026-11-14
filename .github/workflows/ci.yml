@@ -154,12 +154,16 @@ jobs:
         uses: pypa/cibuildwheel@v4.3.5
         env:
           CIBW_ARCHS: ${{ matrix.archs }}
+          # This package supports CPython only (see setup.cfg), so select CPython
+          # explicitly rather than relying on cibuildwheel's default build set.
+          CIBW_BUILD: "cp3*"
           CIBW_TEST_COMMAND: pytest {package}
           CIBW_TEST_REQUIRES: pytest hypothesis
-          # Skip tests on emulated Linux arches: slow under QEMU, and hypothesis
-          # has no musllinux s390x wheel so it would build from source (Rust)
-          # under emulation. The wheel itself still builds; it is tested on
-          # x86_64, and the pytest job covers the library across all versions.
+          # Skip tests on emulated Linux arches: they are slow under QEMU, and
+          # hypothesis 6.168+ ships compiled wheels but has no musllinux s390x
+          # wheel, so pip falls back to building it from source (via maturin /
+          # Rust) and that fails under emulation. Wheels still build; they are
+          # tested on x86_64, and the pytest matrix covers all Python versions.
           CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x,armv7l}"
       - name: Upload wheels artifact
         uses: actions/upload-artifact@v4
