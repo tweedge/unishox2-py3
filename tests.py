@@ -241,7 +241,7 @@ def test_surrogate_fails():
         "Kecantikan bukan di muka. Kecantikan adalah cahaya di dalam hati.",
         "🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣🤣",
         "😀😃😄😁😆😅🤣😂🙂🙃😉😊😇🥰😍🤩😘😗😚😙😋😛😜🤪😝🤑🤗🤭🤫🤔🤐🤨😐😑😶😏😒🙄😬🤥😌😔😪🤤😴😷🤒🤕🤢",
-        "Hello\x80\x83\xAE\xBC\xBD\xBE",
+        "Hello\x80\x83\xae\xbc\xbd\xbe",
     ],
 )
 def test_original_suite(string):

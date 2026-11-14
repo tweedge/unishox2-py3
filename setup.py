@@ -1,7 +1,6 @@
 from os import path
 from setuptools import Extension, setup
 
-
 if __name__ == "__main__":
     setup(
         ext_modules=[
