@@ -1,0 +1,49 @@
+name: wheel-check
+
+# Weekly drift detector: fails if the latest PyPI release is missing wheels for a
+# currently-supported CPython on a major platform, or if the pinned cibuildwheel
+# version has fallen behind the latest release. See issue #8 for context.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Exit 1 = real drift, 2 = PyPI/network failure. Only drift files an issue.
+      - name: Check wheel completeness and cibuildwheel drift
+        id: drift
+        run: |
+          set +e
+          python .github/scripts/wheel_check.py
+          code=$?
+          echo "exitcode=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Open or update tracking issue on drift
+        if: steps.drift.outputs.exitcode == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Published wheels are stale"
+          body="The weekly wheel-check detected drift. See the failing run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          existing=$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
+      - name: Fail the run so drift or check errors are visible
+        if: always() && steps.drift.outputs.exitcode != '0'
+        run: exit 1
