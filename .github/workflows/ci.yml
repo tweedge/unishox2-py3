@@ -1,7 +1,15 @@
 name: ci
 
 # secret use is OK per https://github.community/t/how-secure-are-secrets/139115
-on: [push, pull_request]
+#
+# Run on PRs and on pushes to main only. Listing both without a branch filter
+# would run every job twice per PR commit (once for the push, once for the PR);
+# main is the only branch that publishes, so restricting push to it keeps the
+# build/test-on-PR, publish-on-main split and halves the work.
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   pytest:
