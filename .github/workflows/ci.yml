@@ -73,13 +73,10 @@ jobs:
           check_filenames: true
           skip: ./.git,./demo.py,./tests.py
 
+  # Builds the sdist on every run and hands it to the publish job as an artifact.
   source_dist:
     needs: pytest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    env:
-      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v4
@@ -93,18 +90,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip build
           python -m build --sdist
-      - name: upload sdist
-        run: |
-          pip install twine
-          twine upload dist/* --skip-existing
+      - name: Upload sdist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
 
+  # Builds and tests wheels on every push and PR so a broken wheel build is
+  # caught before merge. Previously this job was main-only, which is how a broken
+  # wheel build shipped through a PR; it now runs everywhere and only the publish
+  # job below uploads, and only after every build has succeeded.
   cibuildwheel:
     needs: pytest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
-    env:
-      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
     strategy:
       fail-fast: false
       matrix:
@@ -127,11 +126,40 @@ jobs:
         uses: pypa/cibuildwheel@v4.3.5
         env:
           CIBW_ARCHS_WINDOWS: auto
-          CIBW_ARCHS_MACOS: all
-          CIBW_ARCHS_LINUX: all
+          CIBW_ARCHS_MACOS: "x86_64 arm64 universal2"
+          # Keep the arches 1.0.0 shipped except i686, whose QEMU-emulated
+          # container intermittently loses DNS for pip and fails the whole job.
+          # (riscv64/armv7l are new to cibuildwheel and are slow, low-value
+          # QEMU targets, so they are left out too.)
+          CIBW_ARCHS_LINUX: "x86_64 aarch64 ppc64le s390x"
           CIBW_TEST_COMMAND: pytest {package}
           CIBW_TEST_REQUIRES: pytest hypothesis
-      - name: Upload wheels
+      - name: Upload wheels artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  # Single publish job: runs only on main and only if pytest, the sdist build,
+  # and every wheel build succeeded. Publishing from one place prevents the
+  # partial release where one OS failed but the others had already uploaded.
+  publish:
+    needs: [source_dist, cibuildwheel]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List artifacts
+        run: ls -R dist
+      - name: Publish to PyPI
         run: |
-          pip install twine
-          twine upload wheelhouse/* --skip-existing
+          python -m pip install --upgrade pip twine
+          twine upload dist/* --skip-existing
