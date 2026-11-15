@@ -1,7 +1,15 @@
 name: ci
 
 # secret use is OK per https://github.community/t/how-secure-are-secrets/139115
-on: [push, pull_request]
+#
+# Run on PRs and on pushes to main only. Listing both without a branch filter
+# would run every job twice per PR commit (once for the push, once for the PR);
+# main is the only branch that publishes, so restricting push to it keeps the
+# build/test-on-PR, publish-on-main split and halves the work.
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   pytest:
@@ -73,13 +81,10 @@ jobs:
           check_filenames: true
           skip: ./.git,./demo.py,./tests.py
 
+  # Builds the sdist on every run and hands it to the publish job as an artifact.
   source_dist:
     needs: pytest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    env:
-      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v7
@@ -93,22 +98,52 @@ jobs:
         run: |
           python -m pip install --upgrade pip build
           python -m build --sdist
-      - name: upload sdist
-        run: |
-          pip install twine
-          twine upload dist/* --skip-existing
+      - name: Upload sdist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
 
+  # Builds and tests wheels on every push and PR so a broken wheel build is
+  # caught before merge. Previously this job was main-only, which is how a broken
+  # wheel build shipped through a PR.
+  #
+  # cibuildwheel builds one interpreter at a time, so a single job covering
+  # every arch x every Python version runs fully serially. Split into one shard
+  # per architecture and let them run in parallel on separate runners; the
+  # publish job collects all wheel artifacts at the end. Adding or dropping an
+  # architecture is a one-line matrix change.
+  #
+  # Tests run after each wheel build. On the emulated Linux arches (everything
+  # but native x86_64) the test step is skipped: it is very slow under QEMU and
+  # the hypothesis test dependency has no musllinux wheel for s390x, so pip would
+  # try to build it (and its Rust toolchain) from source under emulation.
   cibuildwheel:
     needs: pytest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ${{ matrix.os }}
-    env:
-      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - name: linux-x86_64
+            os: ubuntu-latest
+            archs: "x86_64"
+          - name: linux-aarch64
+            os: ubuntu-latest
+            archs: "aarch64"
+          - name: linux-ppc64le
+            os: ubuntu-latest
+            archs: "ppc64le"
+          - name: linux-s390x
+            os: ubuntu-latest
+            archs: "s390x"
+          - name: macos
+            os: macos-latest
+            archs: "x86_64 arm64 universal2"
+          - name: windows
+            os: windows-latest
+            archs: "AMD64 x86"
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v7
@@ -126,12 +161,44 @@ jobs:
       - name: Build and test wheels
         uses: pypa/cibuildwheel@v4.3.5
         env:
-          CIBW_ARCHS_WINDOWS: auto
-          CIBW_ARCHS_MACOS: all
-          CIBW_ARCHS_LINUX: all
+          CIBW_ARCHS: ${{ matrix.archs }}
+          # This package supports CPython only (see setup.cfg), so select CPython
+          # explicitly rather than relying on cibuildwheel's default build set.
+          CIBW_BUILD: "cp3*"
           CIBW_TEST_COMMAND: pytest {package}
           CIBW_TEST_REQUIRES: pytest hypothesis
-      - name: Upload wheels
+          # Skip tests on emulated Linux arches: they are slow under QEMU, and
+          # hypothesis 6.168+ ships compiled wheels but has no musllinux s390x
+          # wheel, so pip falls back to building it from source (via maturin /
+          # Rust) and that fails under emulation. Wheels still build; they are
+          # tested on x86_64, and the pytest matrix covers all Python versions.
+          CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x,armv7l}"
+      - name: Upload wheels artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.name }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  # Single publish job: runs only on main and only if pytest, the sdist build,
+  # and every wheel build succeeded. Publishing from one place prevents the
+  # partial release where one OS failed but the others had already uploaded.
+  publish:
+    needs: [source_dist, cibuildwheel]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List artifacts
+        run: ls -R dist
+      - name: Publish to PyPI
         run: |
-          pip install twine
-          twine upload wheelhouse/* --skip-existing
+          python -m pip install --upgrade pip twine
+          twine upload dist/* --skip-existing
