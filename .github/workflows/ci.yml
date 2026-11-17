@@ -99,7 +99,7 @@ jobs:
           python -m pip install --upgrade pip build
           python -m build --sdist
       - name: Upload sdist artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -174,7 +174,7 @@ jobs:
           # tested on x86_64, and the pytest matrix covers all Python versions.
           CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x,armv7l}"
       - name: Upload wheels artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.name }}
           path: wheelhouse/*.whl
@@ -201,7 +201,7 @@ jobs:
       id-token: write
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
