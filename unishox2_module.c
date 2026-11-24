@@ -173,6 +173,11 @@ static PyObject *py_unishox_decompress(PyObject *self, PyObject *args) {
 
   long length_hint = -1;
   if (length_obj != Py_None) {
+    if (!PyLong_Check(length_obj)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "original length must be an integer or None");
+      return NULL;
+    }
     length_hint = PyLong_AsLong(length_obj);
     if (length_hint == -1 && PyErr_Occurred())
       return NULL;
