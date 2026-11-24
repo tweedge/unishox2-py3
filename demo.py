@@ -73,18 +73,17 @@ pprint(args.string)
 
 for i in range(0, args.iterations):
     print("Compresses to ...")
-    compressed, original_size = unishox2.compress(args.string, with_size=True)
+    compressed = unishox2.compress(args.string)
     pprint(compressed)
 
     print("Decompresses to ...")
-    decompressed = unishox2.decompress(compressed, original_size)
+    decompressed = unishox2.decompress(compressed)
     pprint(decompressed)
 
-    # The original length is only an optional hint - this also works
-    assert unishox2.decompress(compressed) == args.string
-
-    # By default compress returns bytes only - no length to track
-    assert unishox2.compress(args.string) == compressed
+    # If you also want the original length (e.g. to store it), ask for it
+    compressed_with_size, original_size = unishox2.compress(args.string, with_size=True)
+    assert compressed_with_size == compressed
+    assert unishox2.decompress(compressed_with_size, original_size) == args.string
 
     if args.string == decompressed:
         print("Test succeeded!")

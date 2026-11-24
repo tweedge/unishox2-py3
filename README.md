@@ -17,59 +17,73 @@ This package enables Python projects to easily use Unishox2 from [siara-cc/Unish
 
 Want to learn more about Unishox2? Read the source paper [here](https://github.com/siara-cc/Unishox2/blob/master/Unishox_Article_2.pdf?raw=true).
 
+> Upgrading an existing project? See [Upgrading from 1.0.2 or below](#upgrading-from-102-or-below).
+
 ### How to Use
 
 This package is available [on PyPI](https://pypi.org/project/unishox2-py3/), and can be installed with `pip3 install unishox2-py3`. Please note that this package **only** supports Python3, and does not work for Python2 or below. You can see its CI status and testing matrix in this repository's [Actions tab](https://github.com/tweedge/unishox2-py3/actions).
 
 Getting started with unishox2-py3 is easy. If you want to give it a try via the command line, you can use [demo.py](https://github.com/tweedge/unishox2-py3/blob/main/demo.py) to compress some sample strings or try one of your own.
 
-If you're looking to integrate, unishox2-py3 currently provides two APIs that pass data to Unishox2's corresponding `simple` APIs - accepting the default optimization preset, which is good for most data. These are:
+If you're looking to integrate, unishox2-py3 gives you two functions. Both use the default optimization preset, which is good for most data.
 
-* `unishox2.compress(str, with_size=False)`
-  * Arguments:
-    * `str` - This requires a string as input (generally, Unicode-encoded).
-    * `with_size` - *(optional, default `False`)* When `False`, returns just the compressed bytes. When `True`, returns a tuple of the compressed bytes and the original length, for callers that want to store the size.
-  * Returns, when `with_size=False` (the default):
-    * `bytes` - The compressed data.
-  * Returns, when `with_size=True`, a tuple:
-    * `bytes` - The compressed data.
-    * `int` - The original length of the string.
-* `unishox2.decompress(bytes, int=None)`
-  * Takes two arguments, the second optional:
-    * `bytes` - The compressed data.
-    * `int` - *(optional)* The original length of the string. It is used only as a size hint. If omitted (or `None`), the output buffer is sized automatically. A hint that is too small is detected and the buffer is grown, so it can never write past the allocation.
-  * Returns:
-    * `str` - A string, the original data.
+`unishox2.compress(string)`
+* Takes one argument: the string to compress (generally, Unicode text).
+* Returns `bytes`: the compressed data.
 
-Taken together, this looks like:
+`unishox2.decompress(data)`
+* Takes one argument: the compressed `bytes`.
+* Returns `str`: the original data.
+
+That's all you need for most projects. Compression and decompression both size their own memory, so there is no length to calculate, store, or pass around:
 
 ```python
 import unishox2
 
-# the string we want to compress
 original_data = "What the developers know:\n1. Whole codebase is spaghetti\n2. Also, spaghetti is delicious."
 
-# compress returns just the bytes - no length to track
 compressed_data = unishox2.compress(original_data)
-# compressed_data now holds bytes, such as b'\x87\xbfi\x85\x1d\x9a\xe9\xfd ...'
+# compressed_data is bytes, such as b'\x87\xbfi\x85\x1d\x9a\xe9\xfd ...'
 
-# decompress needs nothing else
 decompressed_data = unishox2.decompress(compressed_data)
-# decompressed_data now holds a string, such as "What the developers know:\n..."
+# decompressed_data is the original string again
+```
 
-# if you also want the original length (e.g. to store it), ask for it
+#### Optional: keeping the original length
+
+If you have a reason to keep the original length (for example, to show a compression ratio), ask for it with `with_size=True`. This returns a `(bytes, length)` tuple, and you can pass `length` back to `decompress()` as an optional hint:
+
+```python
 compressed_data, original_size = unishox2.compress(original_data, with_size=True)
-# original_size now holds an integer, such as 89 - optional, use it as a hint
+# original_size is the original string's length in bytes, such as 89
+
 decompressed_data = unishox2.decompress(compressed_data, original_size)
 ```
 
-### Important Notes
+The length is only a hint. `decompress()` works with or without it, and a hint that is too small is handled safely (the output buffer is grown as needed) instead of crashing. Passing the correct length lets the buffer be allocated once, which is slightly faster.
 
-You do **not** need to store the `original_size` to decompress. `compress()` returns just the bytes by default and `decompress()` sizes the output buffer for you, so nothing else needs to be saved. If you pass a length hint and it is too small, it is handled safely (the buffer grows as needed) rather than crashing.
+### Upgrading from 1.0.2 or below
 
-If you want the original length for your own reasons, call `compress(..., with_size=True)` to get it back and pass it to `decompress()` as an optional hint. That lets the output buffer be allocated exactly once instead of being grown, which is slightly faster. A maximum (for example 20 for usernames that must be 3-20 characters) is also a safe hint.
+In 1.0.2 and earlier, `compress()` always returned `(bytes, original_size)` and `decompress()` required the length, because decompression could not size its own memory safely. Both are fixed now.
 
-**Migrating from 1.x:** earlier versions returned `(bytes, original_size)` from `compress()`. In 2.0 `compress()` returns only `bytes`; pass `with_size=True` to get the old tuple back. `decompress()` still accepts an optional length, so code that stored the size keeps working.
+To upgrade, change your existing calls:
+
+```python
+# Before (1.0.2 and below)
+compressed_data, original_size = unishox2.compress(original_data)
+decompressed_data = unishox2.decompress(compressed_data, original_size)
+
+# After (2.0 and above) - the simplest form
+compressed_data = unishox2.compress(original_data)
+decompressed_data = unishox2.decompress(compressed_data)
+
+# Or, if you want to keep the old return shape, add with_size=True.
+# decompress() still accepts the length, so stored lengths keep working.
+compressed_data, original_size = unishox2.compress(original_data, with_size=True)
+decompressed_data = unishox2.decompress(compressed_data, original_size)
+```
+
+You do **not** need to migrate any already-stored compressed data. The compressed format is unchanged, and `decompress()` still accepts a length if you have one saved.
 
 ### OS/Architecture Support
 
