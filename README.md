@@ -31,10 +31,10 @@ If you're looking to integrate, unishox2-py3 currently provides two APIs that pa
   * Returns a tuple: 
     * `bytes` - The compressed data.
     * `int` - The original length of the string.
-* `unishox2.decompress(bytes, int)`
-  * Takes two arguments:
+* `unishox2.decompress(bytes, int=None)`
+  * Takes two arguments, the second optional:
     * `bytes` - The compressed data.
-    * `int` - The original length of the string.
+    * `int` - *(optional)* The original length of the string. It is used only as a size hint. If omitted (or `None`), the output buffer is sized automatically. A hint that is too small is detected and the buffer is grown, so it can never write past the allocation.
   * Returns:
     * `str` - A string, the original data.
 
@@ -51,18 +51,20 @@ compressed_data, original_size = unishox2.compress(original_data)
 # compressed_data now holds bytes, such as b'\x87\xbfi\x85\x1d\x9a\xe9\xfd ...'
 # original_size now holds an integer, such as 89
 
-# to get the original string back, we need compressed_data AND original_size
+# to get the original string back you can optionally pass original_size as a hint;
+# it avoids a little extra work, but is not required
 decompressed_data = unishox2.decompress(compressed_data, original_size)
 # decompressed_data now holds a string, such as "What the developers know:\n..."
+
+# the length is optional - this also works and gives the same result
+decompressed_data = unishox2.decompress(compressed_data)
 ```
 
 ### Important Notes
 
-First, you have to have the `original_size`, or know what the *maximum* `original_size` can be for your data, as Unishox2 does not dynamically allocate memory for the resultant string when decompressing. If you need to track the exact size (ex. if some documents are KB, where others are GB), and you are saving the Unishox2-compressed data to a database, you **must** store the `original_size` value as well.
+You do **not** need to store the `original_size` to decompress. Unishox2 sizes the output buffer for you when no length is provided, and a value that is too small is handled safely (the buffer grows as needed) rather than crashing. Passing the correct `original_size` is still *recommended* when you already have it: it lets the buffer be allocated exactly once instead of being grown, which is slightly faster.
 
-As mentioned before, any reasonable maximum for the resultant data also works. So if you are storing usernames that must be 3-20 characters in length, you can skip saving the `original_size` and use 20 as the `original_size` for all values during decompression.
-
-Conversely, if you give an `original_size` value that is too small, too little memory will be allocated. This means that Unishox2 will write past the memory boundary (as it's C under the hood, which is just bound to Python via a module), and your Python program will crash.
+If you store Unishox2-compressed data and want to keep the exact size for other reasons, keep saving the `original_size` returned by `compress()`. If you only pass a maximum (for example 20 for usernames that must be 3-20 characters), that maximum is a safe hint too.
 
 ### OS/Architecture Support
 
@@ -107,8 +109,9 @@ The original test suite from [test_unishox2.c](https://github.com/siara-cc/Unish
 
 Tests were added to ensure the Python-to-C binding is type safe:
 - Ensuring `compress()` only takes strings
-- Ensuring `decompress()` only takes bytes and an integer
-  - Though it will still take a negative integer, and instantly crash, so... don't do that
+- Ensuring `decompress()` only takes bytes and an optional integer
+  - The integer is a size hint; a negative value raises `ValueError`
+  - A hint that is too small is grown automatically instead of writing past the buffer
 - Ensuring `compress()` won't take a Unicode surrogate e.g. `\ud800`
 
 Tests were also added to check certain edge cases:
@@ -116,8 +119,8 @@ Tests were also added to check certain edge cases:
 - Ensuring Unishox2 works with ASCII inputs
 
 And finally, [hypothesis](https://hypothesis.readthedocs.io/en/latest/) based property testing was added to generate random inputs which:
-- Build confidence that as long as a *minimum* length is known for strings, decompression will always work, and original_size doesn't need to be saved
-  - This runs 25,000 tests which allocate 44 bytes <= x <= 1 gigabyte for decompression
+- Build confidence that decompression works for any non-negative length hint, from 0 up to 1 gigabyte (a too-small hint is recovered from, not trusted)
+  - This runs 25,000 tests which pass 0 bytes <= x <= 1 gigabyte as the hint for decompression
 - Build confidence that Unishox2 is resilient and functional when presented with arbitrary Unicode input
   - This runs 25,000 tests which generate valid Unicode of any length and composition
 

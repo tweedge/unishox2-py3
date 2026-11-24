@@ -80,6 +80,9 @@ for i in range(0, args.iterations):
     decompressed = unishox2.decompress(compressed, original_size)
     pprint(decompressed)
 
+    # The original length is only an optional hint - this also works
+    assert unishox2.decompress(compressed) == args.string
+
     if args.string == decompressed:
         print("Test succeeded!")
         # As `compressed` is already raw bytes, we can also call len() on this ...

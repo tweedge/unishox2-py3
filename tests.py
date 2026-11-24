@@ -54,9 +54,9 @@ def test_decompress_non_bytes():
 
 def test_decompress_non_int():
     """
-    Verify only integers are accepted by decompress for malloc()
+    Verify only integers (or None) are accepted as the optional length hint.
 
-    A NEGATIVE INTEGER WILL CAUSE A FAILURE!
+    A negative integer is now rejected with ValueError instead of crashing.
     """
     string = "The quick brown fox jumps over the lazy dog."
     byte = b"\x87\xa7=\xe3\xe5y\x95=\xa5^/y\xfd\xbfi&\x8c\xb0\x1fy\x95\x7f\x11w\x8a{&\xd7\xbc\xf5\x93\xdaI\x97"
@@ -322,3 +322,76 @@ def test_random_unicode_strings(string):
     compressed, original_size = unishox2.compress(string)
     decompressed = unishox2.decompress(compressed, original_size)
     assert decompressed == string
+
+
+def test_decompress_without_length():
+    """
+    The original length is optional: decompression succeeds with no hint.
+    """
+    for string in (
+        "",
+        "a",
+        "The quick brown fox jumps over the lazy dog.",
+        "😀😃😄😁😆😅🤣😂🙂🙃",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    ):
+        compressed, _ = unishox2.compress(string)
+        assert unishox2.decompress(compressed) == string
+        assert unishox2.decompress(compressed, None) == string
+
+
+def test_decompress_hint_too_small_does_not_crash():
+    """
+    A hint smaller than the real length must be recovered from, not crash.
+
+    Previously the hint sized the malloc directly and passing too small a value
+    wrote past the buffer (undefined behavior / core dump).
+    """
+    string = (
+        "The quick brown fox jumps over the lazy dog. "
+        "😀😃😄😁😆😅🤣😂🙂🙃 aaaaaaaaaaaaaaaaaaaaaaaaaa"
+    )
+    compressed, original_size = unishox2.compress(string)
+    for hint in (0, 1, 2, 5, original_size // 2, original_size - 1):
+        assert unishox2.decompress(compressed, hint) == string
+
+
+@given(integers(min_value=0, max_value=1073741824))
+def test_decompress_hint_is_advisory(alloc):
+    """
+    Any non-negative hint, from 0 up to 1 GB, decompresses correctly.
+    """
+    string = "The quick brown fox jumps over the lazy dog."
+    compressed, _ = unishox2.compress(string)
+    assert unishox2.decompress(compressed, alloc) == string
+
+
+def test_decompress_negative_length_rejected():
+    """
+    A negative hint is a caller error and is rejected cleanly.
+    """
+    compressed, _ = unishox2.compress("hello")
+    with pytest.raises(ValueError):
+        unishox2.decompress(compressed, -1)
+
+
+def test_decompress_preserves_embedded_nulls():
+    """
+    Decompression must preserve NUL bytes inside the original data.
+    """
+    for string in ("\x00", "a\x00b\x00c", "\x00\x00\x00", "x\x00" * 50):
+        compressed, _ = unishox2.compress(string)
+        assert unishox2.decompress(compressed, len(string)) == string
+        assert unishox2.decompress(compressed) == string
+
+
+def test_compress_returns_exact_bytes():
+    """
+    The compressed bytes are the same regardless of the internal buffer growth,
+    and match the length reported for the original string.
+    """
+    string = "What the developers know:\n1. Whole codebase is spaghetti"
+    compressed, original_size = unishox2.compress(string)
+    assert original_size == len(string)
+    assert isinstance(compressed, bytes)
+    assert unishox2.decompress(compressed, original_size) == string
