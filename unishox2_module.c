@@ -104,14 +104,21 @@ static int usx_compress_alloc(const char *in, int in_len, char **out) {
   }
 }
 
-static PyObject *py_unishox_compress(PyObject *self, PyObject *args) {
+static PyObject *py_unishox_compress(PyObject *self, PyObject *args, PyObject *kwargs) {
+  static char *kwlist[] = {"string", "with_size", NULL};
   char *uncompressed_input;
   Py_ssize_t uncompressed_input_size;
+  int with_size = 0; /* default: return bytes only */
   /*
    * ":compress" leads to Python referencing this function correctly in the event of
    * an error during PyArg_ParseTuple, like when passing a list instead of a string.
+   *
+   * with_size defaults to false, so compress() returns just the compressed
+   * bytes. Pass with_size=True to also get the original length back as
+   * (bytes, original_size) for callers that store or reuse it.
    */
-  if (!PyArg_ParseTuple(args, "s#:compress", &uncompressed_input, &uncompressed_input_size)) {
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|p:compress", kwlist,
+                                   &uncompressed_input, &uncompressed_input_size, &with_size)) {
     return NULL;
   }
 
@@ -134,15 +141,19 @@ static PyObject *py_unishox_compress(PyObject *self, PyObject *args) {
   }
 
   /*
-   * We now know the exact compressed size, so build the Python bytes and
-   * return it alongside the original uncompressed size. Callers may pass that
-   * size back to decompress as an optional hint.
+   * We now know the exact compressed size. By default return only the bytes;
+   * with_size=True additionally returns the original uncompressed size, which
+   * decompress accepts as an optional hint.
    */
-  PyObject *py_multi_object =
-      Py_BuildValue("y#n", output_buffer, (Py_ssize_t)compressed_size,
-                    (Py_ssize_t)uncompressed_input_size);
+  PyObject *py_result;
+  if (with_size) {
+    py_result = Py_BuildValue("y#n", output_buffer, (Py_ssize_t)compressed_size,
+                              (Py_ssize_t)uncompressed_input_size);
+  } else {
+    py_result = Py_BuildValue("y#", output_buffer, (Py_ssize_t)compressed_size);
+  }
   free(output_buffer);
-  return py_multi_object;
+  return py_result;
 }
 
 static PyObject *py_unishox_decompress(PyObject *self, PyObject *args) {
@@ -212,8 +223,9 @@ static PyObject *py_unishox_decompress(PyObject *self, PyObject *args) {
 
 // Which methods are exposed to the python world, including their docstrings.
 static PyMethodDef UnishoxMethods[] = {
-    {"compress", py_unishox_compress, METH_VARARGS,
-     "Compresses a string using unishox2 compression.\n\nArgs:\n    string: An input string.\nReturns:\n    bytes: A unishox2-compressed array of bytes.\n    int: The original uncompressed length, which can be passed back to decompress as an optional hint."},
+    {"compress", (PyCFunction)(void (*)(void))py_unishox_compress,
+     METH_VARARGS | METH_KEYWORDS,
+     "Compresses a string using unishox2 compression.\n\nArgs:\n    string: An input string.\n    with_size: If False (default), return just the compressed bytes. If True, return (bytes, original_length) so the length can be passed back to decompress as an optional hint.\nReturns:\n    bytes, or (bytes, int) when with_size is True."},
     {"decompress", py_unishox_decompress, METH_VARARGS,
      "Decompresses a unishox2 compressed string.\n\nArgs:\n    bytes: A unishox2-compressed array of bytes.\n    int: Optional original length hint. If omitted or None, the output buffer is sized automatically. A hint that is too small is handled safely (it is grown as needed).\nReturns:\n    string: The decompressed, near-original string."},
     {NULL, NULL, 0, NULL} /* Sentinel */
