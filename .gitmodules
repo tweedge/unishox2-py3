@@ -1,3 +1,4 @@
 [submodule "Unishox2"]
 	path = Unishox2
-	url = https://github.com/siara-cc/Unishox2
+	url = https://github.com/tweedge/Unishox2
+	branch = fix/pedantic-output-len
